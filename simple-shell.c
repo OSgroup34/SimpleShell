@@ -1,19 +1,64 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <signal.h>
+#include <sys/time.h>
+#include <time.h>
 
+#define MAX 1000
+char** historyArray; //declaring global variable to access in different functions 
+int num=0;   
 
-char* read_user_input() {
-    char* buffer = (char*)malloc(8000);
+char* readInput() {
+    char* buffer=(char*)malloc(MAX*sizeof(char*));
     printf("OSAssignment2@shell:~$ ");
     if (buffer==NULL){             
-        printf("Memory allocation failed!\n");
+        printf("Memory allocation failed\n");
         exit(1);
     }
 
-    if (fgets(buffer, 1000, stdin)==NULL){   
+    if (fgets(buffer,MAX,stdin)==NULL){   
         printf("Could not read input\n");
         exit(1);
     }
-    buffer[strcspn(buffer, "\n")]='\0';
+    buffer[strcspn(buffer,"\n")]='\0';
     return buffer;
+}
+int parse(char* cmd,char** arr,char* delim){
+    char* word=strtok(cmd,delim);
+    int size=0;
+    while (word!=NULL){
+        arr[size++]=word;
+        word=strtok(NULL,delim);}
+    arr[size]=NULL;
+    return size;}
+
+void createProcess(char* command){
+    historyArray[num++] = strdup(command);
+    char** arr = (char**)malloc(MAX * sizeof(char*));
+    if (arr == NULL) {
+        printf("Memory allocation failed\n");
+        exit(1);
+    }
+    int arrsize=parse(command,arr,"|");
+    if (arrsize==1){
+        //no pipe
+    }
+    else{
+        //pipe
+    }
+}
+
+void mainloop(){
+    int repeat=1;
+    while (repeat){
+        char* cmd=read_user_input();
+        createProcess(cmd);
+    }
+}
+
+int main(){
+
 }
 
