@@ -46,8 +46,20 @@ void createProcess(char* command){
         //no pipe
     }
     else{
-        //pipe
+        int pipes[arg_size][2];
+        if (pipe(pipes[i])==-1){
+            prerror("Error: pipeline\n");
+            exit(1);
+        }
+        int stat=fork();
+        if (i>0){
+            close(pipes[i-1][1];
+            dup2(pipes[i-1][0], STDIN_FILENO);
+            close(pipes[i-1][0];
+            
     }
+    
+    
 }
 
 void mainloop(){
