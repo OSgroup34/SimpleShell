@@ -94,20 +94,62 @@ void runningProcess(char* command){
             perror("Forking error\n");
             exit(1);
     }}
-    else{
-    /*   int pipes[arg_size][2];
-        if (pipe(pipes[i])==-1){
-            prerror("Error: pipeline\n");
+    else{ //with pipeline
+        int pipelines[arg_size][2];
+        int i=0;
+        while(i<arrSize){
+            if(pipe(pipelines[i])==-1){
+            perror("Error creating pipeline\n");
             exit(1);
+            }        
+    
+            int check=fork();
+            if(check==0){
+                char** cmdLst=(char**)malloc(MAX*sizeof(char*));
+                if(cmdLst==NULL){
+                    perror("Memory allocation failed");
+                    exit(1);
+                }
+                parse(arr[i],cmdLst," ");
+
+                if(i>0){
+                    close(pipelines[i-1][1]);
+                    dup2(pipelines[i-1][0],STDIN_FILENO);
+                    close(pipelines[i-1][0]);
+                }
+                if(i<arrsize-1){
+                    dup2(pipelines[i][1],STDOUT_FILENO);
+                    close(pipelines[i][0]);
+                    close(pipelines[i][1]);
+                }
+
+                execvp(cmdLst[0],cmdLst);
+                perror("execvp failed");
+                free(cmdLst);
+                exit(1);
+            }
+            else if(check>0){
+                if(i>0){
+                    close(pipelines[i-1][0]);
+                    close(pipelines[i-1][1]);
+                }
+
+                if(i==arrSize-1){
+                    pidArray[historyCount]=wait(NULL);
+                    gettimeofday(&endTime,NULL);
+                    runtimeArray[historyCount]=(endTime.tv_sec-startTime.tv_sec)+(endTime.tv_usec-startTime.tv_usec)/1000000.0;
+                    historyCount++;
+                }
+                else{wait(NULL)}
+            }
+            else{
+                printf("Forking error\n");
+                exit(1);    
+            }
+            i++;
         }
-        int stat=fork();
-        if (i>0){
-            close(pipes[i-1][1];
-            dup2(pipes[i-1][0], STDIN_FILENO);
-            close(pipes[i-1][0];
-            
-    }*/
 }}
+   
 void mainloop(){
     int repeat=1;
     while (repeat!=0){
