@@ -43,7 +43,7 @@ int parse(char* cmd,char** arr,char* delim){
 void runningProcess(char* command){
     char** arr = (char**)malloc(MAX * sizeof(char*));
     if (arr == NULL) {
-        printf("Memory allocation failed\n");
+        perror("Memory allocation failed");
         exit(1);
     }
     int arrsize=parse(command,arr,"|");
@@ -51,29 +51,38 @@ void runningProcess(char* command){
         int check=fork();
         if (check == 0){
             char** cmdLst=(char**)malloc(MAX * sizeof(char*));
-            parse(arr[0], cmdLst, " ");
-            int status=execvp(cmdLst[0], cmdLst);
+            if (cmdLst==NULL) {
+                perror("Memory allocation failed");
+                free(cmdLst);
+                exit(1);
+            }
+            parse(arr[0],cmdLst," ");
             if (historyCount<MAX){
-                historyArray[historyCount]=command;
+                historyArray[historyCount]=strdup(command);
             }
             else{
-                printf("Command Limit Exceeded\n");
+                perror("Command Limit Exceeded");
+                free(cmdLst);
                 exit(1);
             }
             gettimeofday(&startTime, NULL);
             currtime=time(NULL);
-            timeArray[historyCount]=strdup(ctime(currtime))
-
-        } 
-        else if (check<0) {
-            printf("Something bad happened.\n");
+            timeArray[historyCount]=strdup(ctime(currtime));
+            execvp(cmdLst[0], cmdLst);
+            perror("execvp failed");
+            free(cmdLst);
             exit(1);
         } 
-        else {
+        else if (check>0) {
             pidArray[historyCount]=wait(NULL);
             gettimeofday(&endTime, NULL);
             runtimeArray[historyCount]=(endTime.tv_sec-startTime.tv_sec)+(endTime.tv_usec-startTime.tv_usec)/1000000.0;
             historyCount++;
+            
+        } 
+        else {
+            perror("Forking error\n");
+            exit(1);
     }}
     else{
         int pipes[arg_size][2];
