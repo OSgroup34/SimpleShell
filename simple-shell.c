@@ -12,10 +12,14 @@ int historyCount=0;
 double runtimeArray[MAX];
 struct timeval startTime;
 struct timeval endTime;
-time_t timeArray[MAX];
-time_t* currtime;
+time_t* timeArray[MAX];
+time_t currtime;
 int pidArray[MAX];
-
+void showHistory(){
+    for(int i=0;i<historyCount;i++){
+        printf("%s\n",historyArray[i]);
+    }
+}
 char* readInput() {
     char* buffer=(char*)malloc(MAX*sizeof(char*));
     printf("OSAssignment2@shell:~$ ");
@@ -56,9 +60,10 @@ void runningProcess(char* command){
                 free(cmdLst);
                 exit(1);
             }
-            parse(arr[0],cmdLst," ");
             if (historyCount<MAX){
                 historyArray[historyCount]=strdup(command);
+                printf(command);
+                printf(historyArray[historyCount]);
             }
             else{
                 perror("Command Limit Exceeded");
@@ -67,11 +72,16 @@ void runningProcess(char* command){
             }
             gettimeofday(&startTime, NULL);
             currtime=time(NULL);
-            timeArray[historyCount]=strdup(ctime(currtime));
-            execvp(cmdLst[0], cmdLst);
+            timeArray[historyCount]=&currtime;
+            if (strcmp("history",arr[0])==0){
+                showHistory();
+            }
+            else{
+            parse(arr[0],cmdLst," ");
+            execvp(cmdLst[0],cmdLst);
             perror("execvp failed");
             free(cmdLst);
-            exit(1);
+            exit(1);}
         } 
         else if (check>0) {
             pidArray[historyCount]=wait(NULL);
@@ -85,7 +95,7 @@ void runningProcess(char* command){
             exit(1);
     }}
     else{
-        int pipes[arg_size][2];
+    /*   int pipes[arg_size][2];
         if (pipe(pipes[i])==-1){
             prerror("Error: pipeline\n");
             exit(1);
@@ -96,20 +106,24 @@ void runningProcess(char* command){
             dup2(pipes[i-1][0], STDIN_FILENO);
             close(pipes[i-1][0];
             
-    }
-    
-    
+    }*/
 }}
-
 void mainloop(){
     int repeat=1;
-    while (repeat){
-        char* cmd=read_user_input();
-        createProcess(cmd);
+    while (repeat!=0){
+        char* cmd=readInput();
+/*        if (strcmp("history",cmd)==0){
+            int check=fork();
+            if (check==0){
+            showHistory();
+            continue;}*/
+        runningProcess(cmd);
+        free (cmd);
     }
-}
+            }
+    
 
 int main(){
-
+    mainloop();
 }
 
