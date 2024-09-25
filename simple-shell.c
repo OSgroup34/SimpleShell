@@ -17,19 +17,18 @@ time_t currtime;
 int pidArray[MAX];
 void showHistory(){
     for(int i=0;i<historyCount;i++){
-        printf("%s\n",historyArray[i]);
-    }
-}
+        printf("%s\n",historyArray[i]);}}
 char* readInput() {
     char* buffer=(char*)malloc(MAX*sizeof(char*));
     printf("OSAssignment2@shell:~$ ");
     if (buffer==NULL){             
-        printf("Memory allocation failed\n");
+        perror("Memory allocation failed\n");
         exit(1);
     }
 
     if (fgets(buffer,MAX,stdin)==NULL){   
         printf("Could not read input\n");
+        free(buffer);
         exit(1);
     }
     buffer[strcspn(buffer,"\n")]='\0';
@@ -46,16 +45,19 @@ int parse(char* cmd,char** arr,char* delim){
 
 void launch(char* command){
     char** arr = (char**)malloc(MAX * sizeof(char*));
+    if (arr == NULL) {
+        perror("Memory allocation failed");
+        free(command);
+        exit(1);
+    }
     if (historyCount<MAX){
         historyArray[historyCount]=strdup(command);
             }
     else{
             perror("Command Limit Exceeded");
+            free(arr);
+            free(command);
             exit(1);    }
-    if (arr == NULL) {
-        perror("Memory allocation failed");
-        exit(1);
-    }
     int arrsize=parse(command,arr,"|");
     if (arrsize==1){
         int check=fork();
@@ -63,7 +65,8 @@ void launch(char* command){
             char** cmdLst=(char**)malloc(MAX * sizeof(char*));
             if (cmdLst==NULL) {
                 perror("Memory allocation failed");
-                free(cmdLst);
+                free(command);
+                free(arr);
                 exit(1);
             }
             if (strcmp("history",arr[0])==0){
@@ -73,7 +76,9 @@ void launch(char* command){
             parse(arr[0],cmdLst," ");
             execvp(cmdLst[0],cmdLst);
             perror("execvp failed");
+            free(command);
             free(cmdLst);
+            free(arr);
             exit(1);}
         } 
         else if (check>0) {
@@ -82,6 +87,8 @@ void launch(char* command){
             timeArray[historyCount]=strdup(ctime(&currtime));
             if (timeArray[historyCount] == NULL) {
                 perror("Memory allocation failed for timeArray");
+                free(command);
+                free(arr);
                 exit(1);
             }
             pidArray[historyCount]=wait(NULL);
@@ -92,6 +99,8 @@ void launch(char* command){
         } 
         else {
             perror("Forking error\n");
+            free(command);
+            free(arr);
             exit(1);
     }}
     else{
@@ -108,6 +117,8 @@ void launch(char* command){
                 char** cmdLst=(char**)malloc(MAX*sizeof(char*));
                 if(cmdLst==NULL){
                     perror("Memory allocation failed");
+                    free(command);
+                    free(arr);
                     exit(1);
                 }
                 parse(arr[i],cmdLst," ");
@@ -126,6 +137,8 @@ void launch(char* command){
                 execvp(cmdLst[0],cmdLst);
                 perror("execvp failed");
                 free(cmdLst);
+                free(command);
+                free(arr);
                 exit(1);
             }
             else if(check>0){
@@ -140,10 +153,13 @@ void launch(char* command){
                     runtimeArray[historyCount]=(endTime.tv_sec-startTime.tv_sec)+(endTime.tv_usec-startTime.tv_usec)/1000000.0;
                     historyCount++;
                 }
-                else{wait(NULL);}
+                else{
+                    wait(NULL);}
             }
             else{
-                printf("Forking error\n");
+                perror("Forking error\n");
+                free(command);
+                free(arr);
                 exit(1);    
             }
             i++;
@@ -152,9 +168,9 @@ void handleSigint(int sig){
     printf("\nExiting...\n");
     printf("History:\n");
     for (int i = 0; i<historyCount; i++) {
-    printf("%s PID:%d | Runtime:%f seconds | Start Time: %s\n", historyArray[i], pidArray[i], runtimeArray[i],timeArray[i]);}
-    exit(0);
-}
+        printf("%s PID:%d | Runtime:%f seconds | Start Time: %s\n", historyArray[i], pidArray[i], runtimeArray[i],timeArray[i]);}
+        exit(0);
+    }
 void mainloop(){
     int repeat=1;
     while (repeat!=0){
@@ -182,6 +198,7 @@ void mainloop(){
             }
             else{
                 perror("Forking error.\n");
+                free(cmd);
                 exit(1);
             }
         }
@@ -192,17 +209,10 @@ void mainloop(){
         }
 
         free(cmd);
-/*        if (strcmp("history",cmd)==0){
-            int check=fork();
-            if (check==0){
-            showHistory();
-            continue;}*/
-    }
-            }
+    }}
     
 
 int main(){
-    
     signal(SIGINT,handleSigint);
     mainloop();
 }
